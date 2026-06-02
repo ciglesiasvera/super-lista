@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Compra — {{ object.shopping_list.name }} — Superlista{% endblock title %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'lists:list_list' %}">Listas</a></li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'lists:list_detail' object.shopping_list.id %}">{{ object.shopping_list.name }}</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Compra</li>
+            </ol>
+        </nav>
+        <h1 class="fw-bold mb-1">
+            <i class="bi bi-receipt text-primary"></i> Compra
+            {% if object.purchase_date %}
+                — {{ object.purchase_date|date:"d/m/Y" }}
+            {% endif %}
+        </h1>
+        <small class="text-muted">
+            {% if object.vendor %}
+                <i class="bi bi-shop"></i> {{ object.vendor.name }}
+            {% endif %}
+            {% if object.purchased_by %}
+                &middot; <i class="bi bi-person"></i> {{ object.purchased_by.get_full_name|default:object.purchased_by.username }}
+            {% endif %}
+            &middot; <i class="bi bi-clock"></i> {{ object.created_at|date:"d/m/Y H:i" }}
+        </small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'purchases:purchase_delete' object.id %}" class="btn btn-outline-danger">
+            <i class="bi bi-trash"></i> Eliminar
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    {# ─── Purchase Details ──────────────────────────── #}
+    <div class="col-12 col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bi bi-cart"></i> Productos comprados
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cant.</th>
+                            <th>Precio unit.</th>
+                            <th>Total línea</th>
+                            <th>Est. vs Real</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in object.lines.all %}
+                            <tr>
+                                <td class="fw-semibold">{{ line.product_name }}</td>
+                                <td>{{ line.quantity }}</td>
+                                <td>${{ line.unit_price|floatformat:0 }}</td>
+                                <td>${{ line.line_total|floatformat:0 }}</td>
+                                <td>
+                                    {% if line.estimated_line_total %}
+                                        {% if line.difference_amount %}
+                                            {% if line.difference_amount < 0 %}
+                                                <span class="text-success">
+                                                    <i class="bi bi-arrow-down"></i> ${{ line.difference_amount|floatformat:0|cut:"-" }}
+                                                </span>
+                                            {% elif line.difference_amount > 0 %}
+                                                <span class="text-danger">
+                                                    <i class="bi bi-arrow-up"></i> +${{ line.difference_amount|floatformat:0 }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">= Exacto</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">
+                                    <p class="text-muted mb-0">No hay productos registrados en esta compra.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# ─── Summary Sidebar ────────────────────────────── #}
+    <div class="col-12 col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bi bi-calculator"></i> Resumen
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-6 text-muted">Subtotal</dt>
+                    <dd class="col-6 text-end mb-2">
+                        {% if object.subtotal %}
+                            ${{ object.subtotal|floatformat:0 }}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-6 text-muted">Descuento</dt>
+                    <dd class="col-6 text-end mb-2">
+                        {% if object.discount_total %}
+                            -${{ object.discount_total|floatformat:0 }}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-6 text-muted">Impuestos</dt>
+                    <dd class="col-6 text-end mb-2">
+                        {% if object.tax_total %}
+                            ${{ object.tax_total|floatformat:0 }}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </dd>
+
+                    <hr class="my-2">
+
+                    <dt class="col-6 fw-bold">Total</dt>
+                    <dd class="col-6 text-end fw-bold fs-5">
+                        ${{ object.total_paid|floatformat:0 }}
+                    </dd>
+
+                    <dt class="col-6 text-muted">Moneda</dt>
+                    <dd class="col-6 text-end mb-0">{{ object.currency }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        {% if object.notes %}
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-chat-dots"></i> Notas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ object.notes|linebreaks }}</p>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if object.receipt %}
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-file-text"></i> Boleta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if object.receipt.receipt_number %}
+                        <p class="mb-1"><strong>Número:</strong> {{ object.receipt.receipt_number }}</p>
+                    {% endif %}
+                    {% if object.receipt.file %}
+                        <a href="{{ object.receipt.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="bi bi-download"></i> Ver boleta
+                        </a>
+                    {% endif %}
+                    {% if object.receipt.notes %}
+                        <p class="small text-muted mt-2 mb-0">{{ object.receipt.notes }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}

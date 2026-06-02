@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Proveedores — Superlista{% endblock title %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold mb-1">
+            <i class="bi bi-shop text-primary"></i> Proveedores
+        </h1>
+        <p class="text-muted mb-0">Gestiona tus supermercados, ferias y tiendas</p>
+    </div>
+    <a href="{% url 'vendors:vendor_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Nuevo proveedor
+    </a>
+</div>
+
+{% if object_list %}
+    <div class="row g-4">
+        {% for vendor in object_list %}
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start mb-3">
+                            <i class="bi bi-shop fs-2 text-primary me-3"></i>
+                            <div>
+                                <h5 class="card-title fw-semibold mb-1">{{ vendor.name }}</h5>
+                                <span class="badge bg-light text-dark">
+                                    {% if vendor.vendor_type == 'supermarket' %}
+                                        <i class="bi bi-building"></i> Supermercado
+                                    {% elif vendor.vendor_type == 'fair' %}
+                                        <i class="bi bi-basket"></i> Feria
+                                    {% elif vendor.vendor_type == 'store' %}
+                                        <i class="bi bi-shop-window"></i> Tienda
+                                    {% else %}
+                                        <i class="bi bi-three-dots"></i> Otro
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% if vendor.address or vendor.city %}
+                            <p class="card-text small text-muted mb-2">
+                                {% if vendor.address %}<i class="bi bi-geo-alt"></i> {{ vendor.address }}{% endif %}
+                                {% if vendor.city %}{% if vendor.address %}, {% endif %}{{ vendor.city }}{% endif %}
+                            </p>
+                        {% endif %}
+                        {% if vendor.notes %}
+                            <p class="card-text small text-muted">{{ vendor.notes|truncatewords:20 }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <div class="btn-group btn-group-sm w-100">
+                            <a href="{% url 'vendors:vendor_update' vendor.id %}"
+                               class="btn btn-outline-secondary" title="Editar">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <a href="{% url 'vendors:vendor_delete' vendor.id %}"
+                               class="btn btn-outline-danger" title="Eliminar">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+        <nav class="mt-4" aria-label="Navegación de páginas">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page=1">&laquo;</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&lsaquo;</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">&rsaquo;</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-shop display-1 text-muted"></i>
+        <h3 class="mt-3 text-muted">No hay proveedores registrados</h3>
+        <p class="text-muted">Agrega supermercados, ferias o tiendas donde realizas tus compras.</p>
+        <a href="{% url 'vendors:vendor_create' %}" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-lg"></i> Agregar proveedor
+        </a>
+    </div>
+{% endif %}
+{% endblock content %}

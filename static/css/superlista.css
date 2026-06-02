@@ -1,0 +1,91 @@
+/* Superlista Custom Styles */
+
+:root {
+    --primary-color: #4a90d9;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+}
+
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer {
+    margin-top: auto;
+    padding: 1rem 0;
+    background-color: #343a40;
+    color: white;
+}
+
+/* Cards hover effect */
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Shopping list items */
+.item-status-badge {
+    font-size: 0.8rem;
+}
+.item-pending { border-left: 4px solid var(--warning-color); }
+.item-bought { border-left: 4px solid var(--success-color); }
+.item-skipped { border-left: 4px solid var(--secondary-color); opacity: 0.6; }
+.item-unavailable { border-left: 4px solid var(--danger-color); }
+
+/* Dashboard stats */
+.stat-card {
+    text-align: center;
+    padding: 1.5rem;
+}
+.stat-card .stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+.stat-card .stat-label {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+}
+
+/* Price difference */
+.difference-positive { color: var(--danger-color); }
+.difference-negative { color: var(--success-color); }
+.difference-zero { color: var(--secondary-color); }
+
+/* Autocomplete suggestions */
+.suggestions-dropdown {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    display: none;
+}
+.suggestions-dropdown .suggestion-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+.suggestions-dropdown .suggestion-item:hover {
+    background-color: #e9ecef;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .table-responsive-custom {
+        font-size: 0.85rem;
+    }
+    .stat-card .stat-number {
+        font-size: 1.5rem;
+    }
+}

@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ object.name }} — Superlista{% endblock title %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{% url 'lists:list_list' %}">Listas</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ object.name }}</li>
+            </ol>
+        </nav>
+        <h1 class="fw-bold mb-1">
+            {% if object.status == 'archived' %}
+                <span class="badge bg-secondary fs-6 align-middle me-2">Archivada</span>
+            {% endif %}
+            {{ object.name }}
+        </h1>
+        {% if object.description %}
+            <p class="text-muted mb-0">{{ object.description }}</p>
+        {% endif %}
+        <small class="text-muted">
+            <i class="bi bi-calendar"></i> {{ object.get_frequency_type_display }}
+            &middot; <i class="bi bi-people"></i> {{ object.members.count }} miembro{{ object.members.count|pluralize }}
+            &middot; <i class="bi bi-clock"></i> Actualizada {{ object.updated_at|date:"d/m/Y" }}
+        </small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'items:item_create' object.id %}" class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> Agregar producto
+        </a>
+        <a href="{% url 'purchases:purchase_create' object.id %}" class="btn btn-primary">
+            <i class="bi bi-cart-check"></i> Registrar compra
+        </a>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-gear"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li>
+                    <a class="dropdown-item" href="{% url 'lists:list_update' object.id %}">
+                        <i class="bi bi-pencil"></i> Editar lista
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#shareModal">
+                        <i class="bi bi-share"></i> Compartir lista
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'purchases:purchase_create' object.id %}">
+                        <i class="bi bi-receipt"></i> Registrar compra
+                    </a>
+                </li>
+                {% if object.share_token %}
+                    <li>
+                        <a class="dropdown-item" href="{% url 'lists:list_detail' object.id %}">
+                            <i class="bi bi-link-45deg"></i> Copiar enlace
+                        </a>
+                    </li>
+                {% endif %}
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{% url 'lists:list_delete' object.id %}">
+                        <i class="bi bi-trash"></i> Eliminar lista
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{# ─── Items Table ───────────────────────────────────── #}
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-cart"></i> Productos ({{ items|length }})
+        </h5>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Filtros">
+            <a href="?status=all" class="btn btn-outline-secondary {% if not request.GET.status or request.GET.status == 'all' %}active{% endif %}">Todos</a>
+            <a href="?status=pending" class="btn btn-outline-secondary {% if request.GET.status == 'pending' %}active{% endif %}">Pendientes</a>
+            <a href="?status=bought" class="btn btn-outline-secondary {% if request.GET.status == 'bought' %}active{% endif %}">Comprados</a>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Cant.</th>
+                    <th scope="col">Unidad</th>
+                    <th scope="col">Categoría</th>
+                    <th scope="col">Precio est.</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Notas</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    <tr class="{% if item.status == 'bought' %}table-success{% elif item.status == 'skipped' or item.status == 'unavailable' %}table-warning{% endif %}">
+                        <td>
+                            <span class="fw-semibold {% if item.status == 'bought' %}text-decoration-line-through text-muted{% endif %}">
+                                {{ item.name }}
+                            </span>
+                        </td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.unit|default:"—" }}</td>
+                        <td>
+                            {% if item.category %}
+                                <span class="badge bg-info text-dark">{{ item.category.name }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.estimated_price %}
+                                ${{ item.estimated_price|floatformat:0 }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pendiente</span>
+                            {% elif item.status == 'bought' %}
+                                <span class="badge bg-success">Comprado</span>
+                            {% elif item.status == 'skipped' %}
+                                <span class="badge bg-secondary">Saltado</span>
+                            {% elif item.status == 'unavailable' %}
+                                <span class="badge bg-danger">No disponible</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.notes %}
+                                <i class="bi bi-chat-dots text-muted" title="{{ item.notes }}"></i>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                {% if item.status == 'pending' %}
+                                    <a href="{% url 'items:item_toggle_status' item.id 'bought' %}"
+                                       class="btn btn-outline-success" title="Marcar comprado">
+                                        <i class="bi bi-check-lg"></i>
+                                    </a>
+                                {% elif item.status == 'bought' %}
+                                    <a href="{% url 'items:item_toggle_status' item.id 'pending' %}"
+                                       class="btn btn-outline-warning" title="Reabrir">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </a>
+                                {% endif %}
+                                <a href="{% url 'items:item_update' object.id item.id %}"
+                                   class="btn btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'items:item_delete' object.id item.id %}"
+                                   class="btn btn-outline-danger" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="bi bi-inbox display-6 text-muted"></i>
+                            <p class="text-muted mt-2 mb-0">No hay productos en esta lista.</p>
+                            <a href="{% url 'items:item_create' object.id %}" class="btn btn-sm btn-success mt-2">
+                                <i class="bi bi-plus-lg"></i> Agregar primer producto
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# ─── Members Section ───────────────────────────────── #}
+<div class="card shadow-sm border-0 mt-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-people"></i> Miembros ({{ object.members.count }})
+        </h5>
+        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#shareModal">
+            <i class="bi bi-person-plus"></i> Invitar
+        </button>
+    </div>
+    <div class="card-body">
+        {% for member in object.members.all %}
+            <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-person-circle fs-4 me-2 text-muted"></i>
+                <div>
+                    <strong>{{ member.user.get_full_name|default:member.user.username }}</strong>
+                    <span class="badge bg-light text-dark ms-2">{{ member.get_role_display }}</span>
+                </div>
+                <small class="text-muted ms-auto">
+                    {% if member.accepted_at %}
+                        Aceptó {{ member.accepted_at|date:"d/m/Y" }}
+                    {% else %}
+                        Pendiente
+                    {% endif %}
+                </small>
+            </div>
+        {% empty %}
+            <p class="text-muted mb-0"><i class="bi bi-info-circle"></i> Eres el único miembro de esta lista.</p>
+        {% endfor %}
+    </div>
+</div>
+
+{# ─── Share Modal ────────────────────────────────────── #}
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-semibold" id="shareModalLabel">
+                    <i class="bi bi-share"></i> Compartir lista
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Comparte esta lista con otras personas para que puedan colaborar.</p>
+                {% if object.share_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Enlace de invitación:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="shareLink"
+                                   value="{{ request.scheme }}://{{ request.get_host }}{% url 'core:invitation_accept' object.share_token %}" readonly>
+                            <button class="btn btn-outline-primary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('shareLink').value)">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
+                <form method="post" action="{% url 'lists:send_invitation' object.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="inviteEmail" class="form-label fw-semibold">Invitar por correo:</label>
+                        <input type="email" class="form-control" id="inviteEmail" name="email"
+                               placeholder="correo@ejemplo.cl" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inviteRole" class="form-label fw-semibold">Rol:</label>
+                        <select class="form-select" id="inviteRole" name="role">
+                            <option value="editor">Editor</option>
+                            <option value="viewer">Espectador</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-send"></i> Enviar invitación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if object.share_token %}
+    {% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const shareLink = document.getElementById('shareLink');
+            if (shareLink) {
+                shareLink.addEventListener('click', function() {
+                    this.select();
+                });
+            }
+        });
+    </script>
+    {% endblock extra_js %}
+{% endif %}
+{% endblock content %}

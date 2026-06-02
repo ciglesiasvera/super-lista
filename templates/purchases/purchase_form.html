@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Registrar compra — Superlista{% endblock title %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="mb-4">
+                    <a href="{% url 'lists:list_detail' shopping_list.id %}" class="text-decoration-none text-muted small">
+                        <i class="bi bi-arrow-left"></i> Volver a {{ shopping_list.name }}
+                    </a>
+                    <h2 class="fw-bold mt-2">
+                        <i class="bi bi-cart-check text-primary"></i> Registrar compra
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Registra una compra realizada para la lista "{{ shopping_list.name }}"
+                    </p>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {{ form|crispy }}
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary flex-fill">
+                            <i class="bi bi-check-lg"></i> Registrar compra
+                        </button>
+                        <a href="{% url 'lists:list_detail' shopping_list.id %}" class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
